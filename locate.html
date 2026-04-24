@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Share Your Location</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f5f2ee;
+      --card: #ffffff;
+      --brand: #1a4f8a;
+      --brand-light: #e8f0fa;
+      --accent: #f07f2d;
+      --text: #1c1c1e;
+      --muted: #6b7280;
+      --success: #16a34a;
+      --error: #dc2626;
+      --radius: 20px;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background-image: radial-gradient(circle at 20% 20%, #dbe8f8 0%, transparent 50%),
+                        radial-gradient(circle at 80% 80%, #fde8d4 0%, transparent 50%);
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 40px 32px;
+      max-width: 400px;
+      width: 100%;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.04), 0 20px 40px rgba(0,0,0,0.08);
+      text-align: center;
+    }
+
+    .logo-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 32px;
+    }
+
+    .logo-icon {
+      width: 36px; height: 36px;
+      background: var(--brand);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .logo-icon svg { width: 20px; height: 20px; fill: white; }
+
+    .logo-text {
+      font-family: 'DM Serif Display', serif;
+      font-size: 20px;
+      color: var(--brand);
+      letter-spacing: -0.3px;
+    }
+
+    /* ── States ── */
+    .state { display: none; }
+    .state.active { display: block; }
+
+    /* idle */
+    .pin-anim {
+      width: 80px; height: 80px;
+      margin: 0 auto 24px;
+      position: relative;
+    }
+
+    .pin-anim .ring {
+      position: absolute; inset: 0;
+      border-radius: 50%;
+      border: 2px solid var(--brand);
+      opacity: 0;
+      animation: ripple 2s ease-out infinite;
+    }
+    .pin-anim .ring:nth-child(2) { animation-delay: 0.6s; }
+    .pin-anim .ring:nth-child(3) { animation-delay: 1.2s; }
+
+    @keyframes ripple {
+      0%   { transform: scale(0.6); opacity: 0.6; }
+      100% { transform: scale(1.8); opacity: 0; }
+    }
+
+    .pin-anim .center {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .pin-anim .center svg { width: 36px; height: 36px; }
+
+    h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 26px;
+      color: var(--text);
+      line-height: 1.25;
+      margin-bottom: 12px;
+    }
+
+    p.sub {
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.6;
+      margin-bottom: 32px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--brand);
+      color: white;
+      border: none;
+      border-radius: 14px;
+      padding: 16px 32px;
+      font-size: 16px;
+      font-weight: 600;
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
+      width: 100%;
+      justify-content: center;
+      transition: background 0.2s, transform 0.1s;
+    }
+    .btn:hover { background: #163f70; }
+    .btn:active { transform: scale(0.98); }
+    .btn svg { width: 18px; height: 18px; fill: white; }
+
+    /* loading */
+    .spinner-wrap {
+      display: flex; justify-content: center;
+      margin: 16px 0 28px;
+    }
+
+    .spinner {
+      width: 56px; height: 56px;
+      border: 3px solid var(--brand-light);
+      border-top-color: var(--brand);
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* success */
+    .check-wrap {
+      width: 80px; height: 80px;
+      background: #dcfce7;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 24px;
+    }
+    .check-wrap svg { width: 40px; height: 40px; stroke: var(--success); }
+
+    .coords-box {
+      background: var(--brand-light);
+      border-radius: 14px;
+      padding: 16px 20px;
+      margin: 20px 0 28px;
+      text-align: left;
+    }
+    .coords-box .label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: var(--brand);
+      margin-bottom: 6px;
+    }
+    .coords-box .value {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .success-note {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    /* error */
+    .error-icon {
+      width: 80px; height: 80px;
+      background: #fee2e2;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 24px;
+    }
+    .error-icon svg { width: 40px; height: 40px; stroke: var(--error); }
+
+    .btn.secondary {
+      background: white;
+      color: var(--brand);
+      border: 2px solid var(--brand);
+    }
+    .btn.secondary:hover { background: var(--brand-light); }
+
+    .divider {
+      height: 1px; background: #e5e7eb;
+      margin: 32px 0;
+    }
+
+    .footer {
+      font-size: 12px;
+      color: #9ca3af;
+      margin-top: 28px;
+    }
+  </style>
+</head>
+<body>
+<div class="card">
+
+  <div class="logo-wrap">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+    </div>
+    <span class="logo-text">ServiceConnect</span>
+  </div>
+
+  <!-- STATE: IDLE -->
+  <div id="state-idle" class="state active">
+    <div class="pin-anim">
+      <div class="ring"></div>
+      <div class="ring"></div>
+      <div class="ring"></div>
+      <div class="center">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="#1a4f8a"/>
+          <circle cx="12" cy="9" r="2.5" fill="white"/>
+        </svg>
+      </div>
+    </div>
+    <h1>Share your location with us</h1>
+    <p class="sub">Our technician needs your location to reach you quickly. Tap the button below — it only takes one tap.</p>
+    <button class="btn" onclick="startLocation()">
+      <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+      Share My Location
+    </button>
+    <p class="footer">🔒 Your location is only used to dispatch your technician and is not stored beyond your service request.</p>
+  </div>
+
+  <!-- STATE: LOADING -->
+  <div id="state-loading" class="state">
+    <div class="spinner-wrap"><div class="spinner"></div></div>
+    <h1>Getting your location…</h1>
+    <p class="sub">Please tap <strong>Allow</strong> if your phone asks for permission.</p>
+  </div>
+
+  <!-- STATE: SUCCESS -->
+  <div id="state-success" class="state">
+    <div class="check-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 6L9 17l-5-5"/>
+      </svg>
+    </div>
+    <h1>Location shared!</h1>
+    <div class="coords-box">
+      <div class="label">Your coordinates</div>
+      <div class="value" id="coords-display">—</div>
+    </div>
+    <p class="success-note">Thank you! Our team has received your location. A technician will be dispatched to you shortly.</p>
+    <p class="footer" style="margin-top:20px;">You can now close this page.</p>
+  </div>
+
+  <!-- STATE: ERROR -->
+  <div id="state-error" class="state">
+    <div class="error-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+    </div>
+    <h1>Couldn't get location</h1>
+    <p class="sub" id="error-msg">Location permission was denied. Please allow location access and try again.</p>
+    <div class="divider"></div>
+    <button class="btn secondary" onclick="retry()">Try Again</button>
+    <p class="footer" style="margin-top:20px;">If this keeps failing, please tell the agent your approximate address.</p>
+  </div>
+
+</div>
+
+<script>
+  // ── Config ──────────────────────────────────────────────────
+  // REPLACE THIS with your actual Salesforce Apex REST endpoint
+  const SF_ENDPOINT = 'https://YOUR_SF_DOMAIN.my.salesforce.com/services/apexrest/location/update';
+
+  // ── Helpers ─────────────────────────────────────────────────
+  function getParam(name) {
+    return new URLSearchParams(window.location.search).get(name);
+  }
+
+  function showState(id) {
+    document.querySelectorAll('.state').forEach(el => el.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  function retry() { showState('state-idle'); }
+
+  // ── Main ─────────────────────────────────────────────────────
+  function startLocation() {
+    if (!navigator.geolocation) {
+      document.getElementById('error-msg').textContent =
+        'Your browser does not support location sharing. Please tell the agent your address.';
+      showState('state-error');
+      return;
+    }
+    showState('state-loading');
+    navigator.geolocation.getCurrentPosition(onSuccess, onError, {
+      enableHighAccuracy: true,
+      timeout: 15000,
+      maximumAge: 0
+    });
+  }
+
+  async function onSuccess(pos) {
+    const lat = pos.coords.latitude.toFixed(6);
+    const lng = pos.coords.longitude.toFixed(6);
+    const caseId = getParam('token') || getParam('caseId') || 'UNKNOWN';
+
+    document.getElementById('coords-display').textContent =
+      `${lat}° N,  ${lng}° E`;
+
+    try {
+      await fetch(SF_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ caseId, latitude: lat, longitude: lng })
+      });
+    } catch (err) {
+      // Still show success to customer — agent will see partial data
+      console.warn('POST to Salesforce failed:', err);
+    }
+
+    showState('state-success');
+  }
+
+  function onError(err) {
+    const messages = {
+      1: 'Location permission was denied. Please allow location access in your browser settings and try again.',
+      2: 'Unable to detect your location. Make sure your GPS / location service is turned on.',
+      3: 'Location request timed out. Please try again in a moment.'
+    };
+    document.getElementById('error-msg').textContent =
+      messages[err.code] || 'An unexpected error occurred.';
+    showState('state-error');
+  }
+</script>
+</body>
+</html>
