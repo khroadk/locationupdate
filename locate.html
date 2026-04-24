@@ -336,7 +336,8 @@
     try {
       await fetch(SF_ENDPOINT, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify({ caseId, latitude: lat, longitude: lng })
       });
     } catch (err) {
